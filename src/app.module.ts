@@ -6,7 +6,6 @@ import { AnalyticsModule } from './modules/analytics/analytics.module'
 import { EmailModule } from './modules/email/email.module'
 import { NotificationsModule } from './modules/notifications/notifications.module'
 import { RowsModule } from './modules/rows/rows.module'
-import { WebhookController } from './modules/webhook/webhook.controller'
 import { WebhookModule } from './modules/webhook/webhook.module'
 
 @Module({
@@ -25,8 +24,5 @@ import { WebhookModule } from './modules/webhook/webhook.module'
 		AnalyticsModule,
 		WebhookModule,
 	],
-	controllers: [WebhookController],
-	providers: [],
-	exports: [],
 })
 export class AppModule {}
