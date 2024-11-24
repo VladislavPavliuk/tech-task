@@ -5,7 +5,7 @@ export class GoogleDriveProvider {
 
 	constructor() {
 		const auth = new google.auth.GoogleAuth({
-			keyFile: '/home/vlad/Downloads/winter-field-442607-d3-b5d8cee46017.json',
+			keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 			scopes: ['https://www.googleapis.com/auth/drive'],
 		})
 
