@@ -47,6 +47,10 @@ export class RowsService {
 	}
 
 	async create(rowNumber: number, data: string): Promise<Row> {
+		if (!data) {
+			throw new Error('Cannot create a row with null data')
+		}
+
 		const existingRow = await this.rowRepository.findOne({ where: { rowNumber } })
 		if (existingRow) {
 			throw new Error(`Row with rowNumber ${rowNumber} already exists`)
