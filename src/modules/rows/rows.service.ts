@@ -12,6 +12,7 @@ import { NotificationsGateway } from '../notifications/notifications.gateway'
 export class RowsService {
 	private rowCount = 0
 	private googleDriveProvider: GoogleDriveProvider
+	private readonly googleSheetsFileId = process.env.GOOGLE_SHEETS_FILE_ID // ID таблиці тепер береться з .env
 
 	constructor(
 		@InjectRepository(Row)
@@ -102,9 +103,8 @@ export class RowsService {
 	}
 
 	private async sendNotificationEmails() {
-		const fileId = '1SBIJNAcz7Z9J7jNav3Tp0EeyeJy4IFHqj14tlWSMpVE'
 		try {
-			const recipients = await this.googleDriveProvider.getFilePermissions(fileId)
+			const recipients = await this.googleDriveProvider.getFilePermissions(this.googleSheetsFileId)
 
 			if (recipients.length === 0) {
 				console.warn('No recipients found for email notification')
