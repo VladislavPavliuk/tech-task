@@ -29,25 +29,30 @@ export class RowsService {
 		return rows
 	}
 
-	async findOne(id: number): Promise<Row> {
-		const cachedRow = await redisClient.get(`row:${id}`)
+	async findOne(rowNumber: number): Promise<Row> {
+		const cachedRow = await redisClient.get(`row:${rowNumber}`)
 		if (cachedRow) {
 			console.log('Отримано з кешу')
-			await this.analyticsService.logEvent('Row Retrieved from Cache', { id })
+			await this.analyticsService.logEvent('Row Retrieved from Cache', { rowNumber })
 			return JSON.parse(cachedRow)
 		}
 
-		const row = await this.rowRepository.findOneBy({ id })
+		const row = await this.rowRepository.findOneBy({ rowNumber })
 		if (row) {
-			await redisClient.set(`row:${id}`, JSON.stringify(row), 'EX', 60)
-			await this.analyticsService.logEvent('Row Retrieved from Database', { id })
+			await redisClient.set(`row:${rowNumber}`, JSON.stringify(row), 'EX', 60)
+			await this.analyticsService.logEvent('Row Retrieved from Database', { rowNumber })
 		}
 
 		return row
 	}
 
-	async create(data: string): Promise<Row> {
-		const newRow = this.rowRepository.create({ data })
+	async create(rowNumber: number, data: string): Promise<Row> {
+		const existingRow = await this.rowRepository.findOne({ where: { rowNumber } })
+		if (existingRow) {
+			throw new Error(`Row with rowNumber ${rowNumber} already exists`)
+		}
+
+		const newRow = this.rowRepository.create({ rowNumber, data })
 		const savedRow = await this.rowRepository.save(newRow)
 
 		this.rowCount++
@@ -65,16 +70,19 @@ export class RowsService {
 			createdAt: savedRow.createdAt,
 		})
 
-		await redisClient.del(`row:${savedRow.id}`)
+		await redisClient.del(`row:${savedRow.rowNumber}`)
 
 		return savedRow
 	}
 
-	async update(id: number, data: string): Promise<Row> {
-		const row = await this.rowRepository.findOneBy({ id })
+	async update(rowNumber: number, data: string): Promise<Row> {
+		const row = await this.rowRepository.findOneBy({ rowNumber })
 		if (!row) {
-			await this.analyticsService.logEvent('Row Update Failed', { id, reason: 'Row not found' })
-			throw new Error(`Row with ID ${id} not found`)
+			await this.analyticsService.logEvent('Row Update Failed', {
+				rowNumber,
+				reason: 'Row not found',
+			})
+			throw new Error(`Row with rowNumber ${rowNumber} not found`)
 		}
 
 		row.data = data
@@ -82,7 +90,7 @@ export class RowsService {
 
 		await this.analyticsService.logEvent('Row Updated', updatedRow)
 
-		await redisClient.del(`row:${id}`)
+		await redisClient.del(`row:${rowNumber}`)
 
 		return updatedRow
 	}

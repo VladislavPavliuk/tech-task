@@ -15,21 +15,21 @@ export class WebhookController {
 
 		try {
 			if (body.action === 'add') {
-				const newRow = await this.rowsService.create(body.data)
+				const newRow = await this.rowsService.create(body.data.rowNumber, body.data.data)
 				console.log('Row added:', newRow)
 
 				await this.analyticsService.logEvent('Webhook Row Added', newRow)
 			} else if (body.action === 'update') {
-				if (!body.id) {
-					console.error('Missing row ID for update action')
+				if (!body.data.rowNumber) {
+					console.error('Missing rowNumber for update action')
 					await this.analyticsService.logEvent('Webhook Update Failed', {
-						reason: 'Missing row ID',
+						reason: 'Missing rowNumber',
 						data: body,
 					})
-					return { success: false, error: 'Missing row ID' }
+					return { success: false, error: 'Missing rowNumber' }
 				}
 
-				const updatedRow = await this.rowsService.update(body.id, body.data)
+				const updatedRow = await this.rowsService.update(body.data.rowNumber, body.data.data)
 				console.log('Row updated:', updatedRow)
 
 				await this.analyticsService.logEvent('Webhook Row Updated', updatedRow)

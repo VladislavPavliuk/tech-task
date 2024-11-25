@@ -54,17 +54,18 @@ describe('RowsService', () => {
 	})
 
 	describe('create', () => {
-		it('should create a new row and log an event', async () => {
+		it('should create a new row with rowNumber and log an event', async () => {
+			const rowNumber = 2
 			const rowData = 'Test data'
-			const savedRow = { id: 1, data: rowData, createdAt: new Date() } as Row
+			const savedRow = { id: 1, rowNumber, data: rowData, createdAt: new Date() } as Row
 
 			rowRepository.create.mockReturnValue(savedRow)
 			rowRepository.save.mockResolvedValue(savedRow)
 			jest.spyOn(analyticsService, 'logEvent')
 
-			const result = await service.create(rowData)
+			const result = await service.create(rowNumber, rowData)
 
-			expect(rowRepository.create).toHaveBeenCalledWith({ data: rowData })
+			expect(rowRepository.create).toHaveBeenCalledWith({ rowNumber, data: rowData })
 			expect(rowRepository.save).toHaveBeenCalledWith(savedRow)
 			expect(analyticsService.logEvent).toHaveBeenCalledWith('Row Created', savedRow)
 			expect(result).toEqual(savedRow)
@@ -72,15 +73,15 @@ describe('RowsService', () => {
 	})
 
 	describe('findOne', () => {
-		it('should return a row if found', async () => {
-			const rowId = 1
-			const row = { id: rowId, data: 'Test row', createdAt: new Date() } as Row
+		it('should return a row if found by rowNumber', async () => {
+			const rowNumber = 2
+			const row = { id: 1, rowNumber, data: 'Test row', createdAt: new Date() } as Row
 
 			rowRepository.findOneBy.mockResolvedValue(row)
 
-			const result = await service.findOne(rowId)
+			const result = await service.findOne(rowNumber)
 
-			expect(rowRepository.findOneBy).toHaveBeenCalledWith({ id: rowId })
+			expect(rowRepository.findOneBy).toHaveBeenCalledWith({ rowNumber })
 			expect(result).toEqual(row)
 		})
 

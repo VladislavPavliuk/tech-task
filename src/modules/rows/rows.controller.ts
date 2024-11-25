@@ -15,20 +15,20 @@ export class RowsController {
 		return this.rowsService.findAll()
 	}
 
-	@ApiOperation({ summary: 'Отримати рядок за ID' })
-	@ApiParam({ name: 'id', description: 'ID рядка', type: Number })
+	@ApiOperation({ summary: 'Отримати рядок за номером' })
+	@ApiParam({ name: 'rowNumber', description: 'Номер рядка', type: Number })
 	@ApiResponse({ status: 200, description: 'Успішно отримано рядок.', type: Row })
 	@ApiResponse({ status: 404, description: 'Рядок не знайдено.' })
-	@Get(':id')
-	async getRow(@Param('id') id: number) {
-		return this.rowsService.findOne(id)
+	@Get(':rowNumber')
+	async getRow(@Param('rowNumber') rowNumber: number) {
+		return this.rowsService.findOne(rowNumber)
 	}
 
 	@ApiOperation({ summary: 'Створити новий рядок' })
-	@ApiBody({ description: 'Дані для створення рядка', schema: { example: { data: 'Новий рядок' } } })
+	@ApiBody({ description: 'Дані для створення рядка', schema: { example: { rowNumber: 2, data: 'Новий рядок' } } })
 	@ApiResponse({ status: 201, description: 'Рядок створено.', type: Row })
 	@Post()
-	async createRow(@Body('data') data: string) {
-		return this.rowsService.create(data)
+	async createRow(@Body('rowNumber') rowNumber: number, @Body('data') data: string) {
+		return this.rowsService.create(rowNumber, data)
 	}
 }
