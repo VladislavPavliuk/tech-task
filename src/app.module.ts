@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { AppController } from './app.controller'
 import { databaseConfig } from './config/database.config'
 import { AnalyticsModule } from './modules/analytics/analytics.module'
 import { EmailModule } from './modules/email/email.module'
@@ -24,5 +25,6 @@ import { WebhookModule } from './modules/webhook/webhook.module'
 		AnalyticsModule,
 		WebhookModule,
 	],
+	controllers: [AppController],
 })
 export class AppModule {}
