@@ -24,7 +24,8 @@ describe('RowsService', () => {
 					useValue: {
 						create: jest.fn(),
 						save: jest.fn(),
-						findOneBy: jest.fn(),
+						findOne: jest.fn(),
+						find: jest.fn(),
 					},
 				},
 				{
@@ -54,47 +55,118 @@ describe('RowsService', () => {
 	})
 
 	describe('create', () => {
-		it('should create a new row with rowNumber and log an event', async () => {
+		it('should create a new row with rowNumber and columnNumber and log an event', async () => {
 			const rowNumber = 2
+			const columnNumber = 3
 			const rowData = 'Test data'
-			const savedRow = { id: 1, rowNumber, data: rowData, createdAt: new Date() } as Row
+			const savedRow = {
+				id: 1,
+				rowNumber,
+				columnNumber,
+				data: rowData,
+				createdAt: new Date(),
+			} as Row
 
 			rowRepository.create.mockReturnValue(savedRow)
 			rowRepository.save.mockResolvedValue(savedRow)
 			jest.spyOn(analyticsService, 'logEvent')
 
-			const result = await service.create(rowNumber, rowData)
+			const result = await service.create(rowNumber, columnNumber, rowData)
 
-			expect(rowRepository.create).toHaveBeenCalledWith({ rowNumber, data: rowData })
+			expect(rowRepository.create).toHaveBeenCalledWith({ rowNumber, columnNumber, data: rowData })
 			expect(rowRepository.save).toHaveBeenCalledWith(savedRow)
 			expect(analyticsService.logEvent).toHaveBeenCalledWith('Row Created', savedRow)
 			expect(result).toEqual(savedRow)
 		})
+
+		it('should throw an error if row with rowNumber and columnNumber already exists', async () => {
+			const rowNumber = 2
+			const columnNumber = 3
+			const rowData = 'Test data'
+
+			rowRepository.findOne.mockResolvedValue({} as Row)
+
+			await expect(service.create(rowNumber, columnNumber, rowData)).rejects.toThrow(
+				`Row with rowNumber ${rowNumber} and columnNumber ${columnNumber} already exists`
+			)
+
+			expect(rowRepository.findOne).toHaveBeenCalledWith({ where: { rowNumber, columnNumber } })
+		})
 	})
 
 	describe('findOne', () => {
-		it('should return a row if found by rowNumber', async () => {
+		it('should return a row if found by rowNumber and columnNumber', async () => {
 			const rowNumber = 2
-			const row = { id: 1, rowNumber, data: 'Test row', createdAt: new Date() } as Row
+			const columnNumber = 3
+			const row = {
+				id: 1,
+				rowNumber,
+				columnNumber,
+				data: 'Test row',
+				createdAt: new Date(),
+			} as Row
 
-			rowRepository.findOneBy.mockResolvedValue(row)
+			rowRepository.findOne.mockResolvedValue(row)
 
-			const result = await service.findOne(rowNumber)
+			const result = await service.findOne(rowNumber, columnNumber)
 
-			expect(rowRepository.findOneBy).toHaveBeenCalledWith({ rowNumber })
+			expect(rowRepository.findOne).toHaveBeenCalledWith({ where: { rowNumber, columnNumber } })
 			expect(result).toEqual(row)
 		})
 
 		it('should return null if no row is found', async () => {
-			rowRepository.findOneBy.mockResolvedValue(null)
+			rowRepository.findOne.mockResolvedValue(null)
 
-			const result = await service.findOne(999)
+			const result = await service.findOne(999, 999)
 
+			expect(rowRepository.findOne).toHaveBeenCalledWith({ where: { rowNumber: 999, columnNumber: 999 } })
 			expect(result).toBeNull()
 		})
 	})
 
-	afterAll(async () => {
+	describe('update', () => {
+		it('should update a row with rowNumber and columnNumber and log an event', async () => {
+			const rowNumber = 2
+			const columnNumber = 3
+			const updatedData = 'Updated data'
+			const existingRow = {
+				id: 1,
+				rowNumber,
+				columnNumber,
+				data: 'Old data',
+				createdAt: new Date(),
+			} as Row
+
+			const updatedRow = { ...existingRow, data: updatedData }
+
+			rowRepository.findOne.mockResolvedValue(existingRow)
+			rowRepository.save.mockResolvedValue(updatedRow)
+			jest.spyOn(analyticsService, 'logEvent')
+
+			const result = await service.update(rowNumber, columnNumber, updatedData)
+
+			expect(rowRepository.findOne).toHaveBeenCalledWith({ where: { rowNumber, columnNumber } })
+			expect(rowRepository.save).toHaveBeenCalledWith(updatedRow)
+			expect(analyticsService.logEvent).toHaveBeenCalledWith('Row Updated', updatedRow)
+			expect(result).toEqual(updatedRow)
+		})
+
+		it('should throw an error if row with rowNumber and columnNumber is not found', async () => {
+			const rowNumber = 2
+			const columnNumber = 3
+			const updatedData = 'Updated data'
+
+			rowRepository.findOne.mockResolvedValue(null)
+
+			await expect(service.update(rowNumber, columnNumber, updatedData)).rejects.toThrow(
+				`Row with rowNumber ${rowNumber} and columnNumber ${columnNumber} not found`
+			)
+
+			expect(rowRepository.findOne).toHaveBeenCalledWith({ where: { rowNumber, columnNumber } })
+		})
+	})
+
+	afterEach(() => {
 		jest.clearAllMocks()
 	})
 

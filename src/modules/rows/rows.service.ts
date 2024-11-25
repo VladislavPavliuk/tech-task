@@ -29,34 +29,35 @@ export class RowsService {
 		return rows
 	}
 
-	async findOne(rowNumber: number): Promise<Row> {
-		const cachedRow = await redisClient.get(`row:${rowNumber}`)
+	async findOne(rowNumber: number, columnNumber: number): Promise<Row> {
+		const cacheKey = `row:${rowNumber}:${columnNumber}`
+		const cachedRow = await redisClient.get(cacheKey)
 		if (cachedRow) {
-			console.log('Отримано з кешу')
-			await this.analyticsService.logEvent('Row Retrieved from Cache', { rowNumber })
+			console.log('Retrieved from cache')
+			await this.analyticsService.logEvent('Row Retrieved from Cache', { rowNumber, columnNumber })
 			return JSON.parse(cachedRow)
 		}
 
-		const row = await this.rowRepository.findOneBy({ rowNumber })
+		const row = await this.rowRepository.findOne({ where: { rowNumber, columnNumber } })
 		if (row) {
-			await redisClient.set(`row:${rowNumber}`, JSON.stringify(row), 'EX', 60)
-			await this.analyticsService.logEvent('Row Retrieved from Database', { rowNumber })
+			await redisClient.set(cacheKey, JSON.stringify(row), 'EX', 60)
+			await this.analyticsService.logEvent('Row Retrieved from Database', { rowNumber, columnNumber })
 		}
 
 		return row
 	}
 
-	async create(rowNumber: number, data: string): Promise<Row> {
+	async create(rowNumber: number, columnNumber: number, data: string): Promise<Row> {
 		if (!data) {
 			throw new Error('Cannot create a row with null data')
 		}
 
-		const existingRow = await this.rowRepository.findOne({ where: { rowNumber } })
+		const existingRow = await this.rowRepository.findOne({ where: { rowNumber, columnNumber } })
 		if (existingRow) {
-			throw new Error(`Row with rowNumber ${rowNumber} already exists`)
+			throw new Error(`Row with rowNumber ${rowNumber} and columnNumber ${columnNumber} already exists`)
 		}
 
-		const newRow = this.rowRepository.create({ rowNumber, data })
+		const newRow = this.rowRepository.create({ rowNumber, columnNumber, data })
 		const savedRow = await this.rowRepository.save(newRow)
 
 		this.rowCount++
@@ -74,19 +75,20 @@ export class RowsService {
 			createdAt: savedRow.createdAt,
 		})
 
-		await redisClient.del(`row:${savedRow.rowNumber}`)
+		await redisClient.del(`row:${savedRow.rowNumber}:${savedRow.columnNumber}`)
 
 		return savedRow
 	}
 
-	async update(rowNumber: number, data: string): Promise<Row> {
-		const row = await this.rowRepository.findOneBy({ rowNumber })
+	async update(rowNumber: number, columnNumber: number, data: string): Promise<Row> {
+		const row = await this.rowRepository.findOne({ where: { rowNumber, columnNumber } })
 		if (!row) {
 			await this.analyticsService.logEvent('Row Update Failed', {
 				rowNumber,
+				columnNumber,
 				reason: 'Row not found',
 			})
-			throw new Error(`Row with rowNumber ${rowNumber} not found`)
+			throw new Error(`Row with rowNumber ${rowNumber} and columnNumber ${columnNumber} not found`)
 		}
 
 		row.data = data
@@ -94,7 +96,7 @@ export class RowsService {
 
 		await this.analyticsService.logEvent('Row Updated', updatedRow)
 
-		await redisClient.del(`row:${rowNumber}`)
+		await redisClient.del(`row:${rowNumber}:${columnNumber}`)
 
 		return updatedRow
 	}
