@@ -166,43 +166,6 @@ describe('RowsService', () => {
 		})
 	})
 
-	describe('delete', () => {
-		it('should delete a row with rowNumber and columnNumber and log an event', async () => {
-			const rowNumber = 2
-			const columnNumber = 3
-			const row = {
-				id: 1,
-				rowNumber,
-				columnNumber,
-				data: 'Test row',
-				createdAt: new Date(),
-			} as Row
-
-			rowRepository.findOne.mockResolvedValue(row)
-			jest.spyOn(analyticsService, 'logEvent')
-
-			await service.delete(rowNumber, columnNumber)
-
-			expect(rowRepository.findOne).toHaveBeenCalledWith({ where: { rowNumber, columnNumber } })
-			expect(rowRepository.remove).toHaveBeenCalledWith(row)
-			expect(analyticsService.logEvent).toHaveBeenCalledWith('Row Deleted', { rowNumber, columnNumber })
-			expect(redisClient.del).toHaveBeenCalledWith(`row:${rowNumber}:${columnNumber}`)
-		})
-
-		it('should throw an error if row with rowNumber and columnNumber is not found', async () => {
-			const rowNumber = 2
-			const columnNumber = 3
-
-			rowRepository.findOne.mockResolvedValue(null)
-
-			await expect(service.delete(rowNumber, columnNumber)).rejects.toThrow(
-				`Row with rowNumber ${rowNumber} and columnNumber ${columnNumber} not found`
-			)
-
-			expect(rowRepository.findOne).toHaveBeenCalledWith({ where: { rowNumber, columnNumber } })
-		})
-	})
-
 	afterEach(() => {
 		jest.clearAllMocks()
 	})

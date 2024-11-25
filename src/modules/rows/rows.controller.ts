@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post } from '@nestjs/common'
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { Row } from '../../entities/row.entity'
 import { RowsService } from './rows.service'
@@ -38,16 +38,5 @@ export class RowsController {
 		@Body('data') data: string
 	) {
 		return this.rowsService.create(rowNumber, columnNumber, data)
-	}
-
-	@ApiOperation({ summary: 'Видалити рядок за номером рядка та стовпця' })
-	@ApiParam({ name: 'rowNumber', description: 'Номер рядка', type: Number })
-	@ApiParam({ name: 'columnNumber', description: 'Номер стовпця', type: Number })
-	@ApiResponse({ status: 200, description: 'Рядок успішно видалено.' })
-	@ApiResponse({ status: 404, description: 'Рядок не знайдено.' })
-	@Delete(':rowNumber/:columnNumber')
-	async deleteRow(@Param('rowNumber') rowNumber: number, @Param('columnNumber') columnNumber: number) {
-		await this.rowsService.delete(rowNumber, columnNumber)
-		return { success: true, message: 'Row deleted successfully' }
 	}
 }

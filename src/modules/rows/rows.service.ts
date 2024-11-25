@@ -101,23 +101,6 @@ export class RowsService {
 		return updatedRow
 	}
 
-	async delete(rowNumber: number, columnNumber: number): Promise<void> {
-		const row = await this.rowRepository.findOne({ where: { rowNumber, columnNumber } })
-		if (!row) {
-			await this.analyticsService.logEvent('Row Deletion Failed', {
-				rowNumber,
-				columnNumber,
-				reason: 'Row not found',
-			})
-			throw new Error(`Row with rowNumber ${rowNumber} and columnNumber ${columnNumber} not found`)
-		}
-
-		await this.rowRepository.remove(row)
-		await redisClient.del(`row:${rowNumber}:${columnNumber}`)
-
-		await this.analyticsService.logEvent('Row Deleted', { rowNumber, columnNumber })
-	}
-
 	private async sendNotificationEmails() {
 		const fileId = '1SBIJNAcz7Z9J7jNav3Tp0EeyeJy4IFHqj14tlWSMpVE'
 		try {
