@@ -34,6 +34,20 @@ export class WebhookController {
 				const updatedRow = await this.rowsService.update(rowNumber, columnNumber, newValue)
 				console.log('Row updated:', updatedRow)
 				await this.analyticsService.logEvent('Webhook Row Updated', updatedRow)
+			} else if (body.action === 'delete') {
+				const { rowNumber, columnNumber } = body.data
+				if (!rowNumber || !columnNumber) {
+					console.error('Missing rowNumber or columnNumber for delete action')
+					await this.analyticsService.logEvent('Webhook Delete Failed', {
+						reason: 'Missing rowNumber or columnNumber',
+						data: body,
+					})
+					return { success: false, error: 'Missing rowNumber or columnNumber' }
+				}
+
+				await this.rowsService.delete(rowNumber, columnNumber)
+				console.log(`Row deleted: rowNumber=${rowNumber}, columnNumber=${columnNumber}`)
+				await this.analyticsService.logEvent('Webhook Row Deleted', { rowNumber, columnNumber })
 			} else {
 				console.error('Unsupported action:', action)
 				await this.analyticsService.logEvent('Webhook Unsupported Action', { action, data })
